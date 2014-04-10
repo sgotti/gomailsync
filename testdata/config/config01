@@ -1,0 +1,25 @@
+
+metadatadir = "/tmp/.metadata/"
+loglevel = "debug"
+
+[[store]]
+name = "store01-Remote"
+storetype = "IMAP"
+host = "127.0.0.1"
+username = "user01"
+password = "password01"
+starttls = true
+
+
+[[store]]
+name = "store02-Local"
+storetype = "Maildir"
+maildir = "/tmp/maildir01"
+mdfilelocation = "maildir"
+
+
+[[syncgroup]]
+name ="syncgroup01"
+stores = [ "store01-Remote", "store02-Local" ]
+concurrentsyncs = 2
+

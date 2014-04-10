@@ -1,0 +1,131 @@
+## gomailsync config file
+
+# This file is in toml format (see toml spec: https://github.com/mojombo/toml)
+# Note: If you need '\' character you have to escape it: '\\'
+
+# Directory where all metadata files are saved by default (with the exception of specific options like mdfilelocation). 
+# Type: String
+# Default: "~/.gomailsync/"
+# metadatadir = "~/.gomailsync/"
+
+# logelevel: error, debug, info. Default: info
+# Type: String
+# Default: "info"
+#loglevel = "info"
+
+# (Boolean) Enable/Disable debugging of go-imap package.
+# Type: Boolean
+# Default: false
+#debugimap = false
+
+
+# A store definition (IMAP)
+[[store]]
+# The store name. Referenced in syncgroup config section
+# Type: String
+name = "store01-Remote"
+
+# The store type. It can be "Maildir" or "IMAP"
+# Type: String
+storetype = "IMAP"
+
+# The IMAP server hostname
+# Type: String
+host = "yourimapserver.example.com"
+
+# The IMAP server port
+# Type: unsigned int
+# Default: 143 with option tls = false else 993
+# port =
+
+# The login username
+# Type: String
+username = "username"
+
+# The login password
+# Type: String
+password = "password"
+
+# Use tls (default port 993). This excludes starttls.
+# Type: Boolean
+# Default: false
+#tls = false
+
+# Use starttls. If it's not supported by the server an error is returned.
+# Type: Boolean
+# Default: false
+#starttls = false
+
+# Verify server certificate.
+# Type: Boolean
+# Default: true
+#validateservercert = true
+
+# Expunge messages after folder sync. If false an external tool should do the expunge. 
+# Type: Boolean
+# Default: true
+#expunge = true
+
+# Accept only the folders that matches all the Regexp Patterns.
+# The path separator to use is the one provided by the store or configured (for Maildir)  
+# If regexppatterns is empty all folders are accepted. Default: empty
+# The format is:
+# /regexp/   : Matches if regexp matches
+# !/regexp/  : Matches if regexp doesn't match
+# Note: The name INBOX is special (for example, with a Maildir store, use INBOX and not the path specified by "inboxpath" to match the INBOX)
+# If you want to accept only the INBOX
+#regexppatterns = [ "/^INBOX$/" ]
+#
+# If you want to accept everything except Draft and all its subfolders
+#regexppatterns = [ "/.*/" , "!/^Drafts$/", "!/^Drafts\\.*$/" ]
+
+# Another store (Maildir)
+[[store]]
+name = "store01-Local"
+storetype = "Maildir"
+
+### Note: Be careful changing these values on an already synced maildir. Always run a dryrun to verify what will be done.
+
+### The base path of the store folders
+maildir = "/tmp/maildir01"
+
+# The separator to use. Valid options: "." or "/"
+# Default: os path separator (on unix: "/")
+# Type: String
+#separator = "/"
+
+# The path relative to maildir where the INBOX lives.
+# Type: String
+# Default: "./INBOX"
+#inboxpath = "./INBOX"
+
+# A syncgroup. It defines a synchronization between two stores.
+[[syncgroup]]
+
+# The syncgroup name.
+# Type: String
+name ="syncgroup01"
+
+# A list of store names
+# Type: Array of strings
+stores = [ "store01-Remote", "store02-Local" ]
+
+# Number of concurrent folder synchronizations.
+# Type: Unsigned int
+# Default: 1
+#concurrentsyncs = 1
+
+# How to handle message deletion. Possible values are: expunge, trash, none
+# expunge: really delete message on destination folder (with imap this will be made with a Deleted flag and a folder expunge, with maildir is a direct file remove).
+# flag: mark the message with the Deleted (T) flag on destination folder. On next synchronization run the messages will be downloaded again to the folder which triggered the deletion. Note: this option will disable expunge on IMAP Stores (or the messages will be removed)
+# trash: Move message to the trash folder (not yes implemented)
+# none: do not do any message deletion
+#
+# Type: String
+# Default: "expunge"
+#deletemode = "expunge"
+
+# Interval between folder syncs. Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+# Type: String
+# Default: "expunge"
+#syncinterval = "10m"

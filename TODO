@@ -1,0 +1,42 @@
+
+
+== Sync ==
+
+*) Folder Excludes
+
+*) donotdelete option
+*) option to not sync if syncstatus is missing but both folders have messages (and related force option)
+
+*) Dryrun option
+*) Option to choose only specified syncgroups
+
+*) Get passwords from external commands
+
+*) Do not load whole mail messages in memory
+
+== Imap ==
+
+*) Implement QRESYNC (probably some changes are needed in go-imap to handle uint64 for HIGHESTMODSEQ)
+*) Fast sync without QRESYNC (only changed messages)
+*) IMAP idle for some folders
+*) Option to handle all folders (like now) or only subscribed folders
+*) Namespaces???
+
+*) Client certificate authentication
+*) Option to Specify ca file (now uses default golang system/distribution dependent root CA file. See for example: http://golang.org/src/pkg/crypto/x509/root_unix.go )
+
+== Maildir ==
+
+*) Add an option to Maildir to choose where to put new messages (new or cur). new shouldn't contains messages with flags but mutt does this.
+*) Escape unsupported filesystem chars in Mailfolder (if ever needed)
+
+
+== Misc ==
+
+*) Option to log to file
+*) Colored logs
+
+*) Cleanup Tests
+*) Write more Tests (Imap tests etc...)
+*) Search optimizations
+*) Memory optimizations
