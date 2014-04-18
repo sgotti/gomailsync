@@ -27,21 +27,11 @@ cd gomailsync
 ./build.sh
 ```
 
-_NOTE_: you need go 1.2+. Please check your installation with
-
-```
-go version
-```
-
 ### Running
-
-First start a single-machine cluster of etcd:
 
 ```sh
 ./gomailsync --help
 ```
-
-
 
 ## Configuration
 
@@ -51,7 +41,7 @@ Better documention will come. In the meantime take a look at an annoted config f
 ## Tested Configurations
 
 OS. GNU/Linux
-IMAP Servers: Dovecot, GMail Imap.
+IMAP Servers: Dovecot, GMail IMAP.
 
 
 | Store         | Store         | Status                  |
@@ -78,10 +68,10 @@ Everything can happen...
 
 
 ### Can I use a store in multiple syncgroups (For example IMAP1 <-> Maildir1 <-> IMAP2)?
-By design it should be possible but more tests to avoid nasty corner cases are needed
+By design it should be possible but more tests to verifiy nasty corner cases are needed.
 
 
 ## Known Problems
 
-- dovecot doesn't quote folder names in list commands that has square brackets. [go-imap](https://code.google.com/p/go-imap/go1/mock) (like other imap clients) doesn't handle this correctly. GMAIL imap instead quotes folder names containing squared brackets. This will give problems if you have folders with square brackets (for example you are syncronizing between gmail that has [Gmail].* folders and dovecot.
-
+- dovecot, during a folder list command, doesn't quote folder names that has square brackets. [go-imap](https://code.google.com/p/go-imap/go1/mock) (like other imap clients) doesn't handle this correctly (I'm working to fix this). GMAIL imap instead quotes folder names containing square brackets (so no problems).
+If you are syncing between GMail and dovecot you'll get problems after the [Gmail].* folders are created on dovecot.
