@@ -10,12 +10,22 @@ GoMailSync is a tool to do two way sync of mail between two stores. These store 
 
 You can build GoMailSync from source:
 
+#### The Go Way:
+Define your GOPATH and then:
+
 ```sh
-git clone https://github.com/sgotti/gomailsync
-go build
+go get github.com/sgotti/gomailsync
 ```
 
-This will generate a binary called `./gomailsync`.
+#### Local build
+
+This will download all dependencies in a GOPATH inside the source dir and put the compiled binary under ./bin/gomailsync :
+
+```sh
+git clone https://github.com/sgotti/gomailsync
+cd gomailsync
+./build.sh
+```
 
 _NOTE_: you need go 1.2+. Please check your installation with
 

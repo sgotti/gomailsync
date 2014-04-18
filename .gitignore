@@ -1,2 +1,4 @@
 *~
 .emacs.desktop
+gopath/
+bin/
