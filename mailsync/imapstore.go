@@ -49,9 +49,8 @@ type ImapStore struct {
 }
 
 func (m *ImapStore) newImapClient() (client *imap.Client, err error) {
-
 	if m.config.Tls && m.config.Starttls {
-		return nil, fmt.Errorf("Both Tls and starttls requested. Choose only one of them.")
+		return nil, fmt.Errorf("Both tls and starttls enabled. Only one of them is permitted.")
 	}
 
 	addr := m.config.Host

@@ -176,7 +176,9 @@ func VerifyStoreConfig(globalconfig *Config, config *StoreConfig) (err error) {
 		if config.Password == "" {
 			return fmt.Errorf(errprefix + "password option is empty")
 		}
-
+		if config.Tls && config.Starttls {
+			return fmt.Errorf(errprefix + "Both tls and starttls enabled. Only one of them is permitted.")
+		}
 	case "Maildir":
 		if config.Maildir == "" {
 			return fmt.Errorf(errprefix + "maildir option is empty")
