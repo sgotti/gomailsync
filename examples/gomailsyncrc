@@ -6,7 +6,7 @@
 # Directory where all metadata files are saved by default (with the exception of specific options like mdfilelocation). 
 # Type: String
 # Default: "~/.gomailsync/"
-# metadatadir = "~/.gomailsync/"
+#metadatadir = "~/.gomailsync/"
 
 # logelevel: error, debug, info. Default: info
 # Type: String
@@ -36,7 +36,7 @@ host = "yourimapserver.example.com"
 # The IMAP server port
 # Type: unsigned int
 # Default: 143 with option tls = false else 993
-# port =
+#port =
 
 # The login username
 # Type: String
@@ -118,7 +118,7 @@ stores = [ "store01-Remote", "store02-Local" ]
 # How to handle message deletion. Possible values are: expunge, trash, none
 # expunge: really delete message on destination folder (with imap this will be made with a Deleted flag and a folder expunge, with maildir is a direct file remove).
 # flag: mark the message with the Deleted (T) flag on destination folder. On next synchronization run the messages will be downloaded again to the folder which triggered the deletion. Note: this option will disable expunge on IMAP Stores (or the messages will be removed)
-# trash: Move message to the trash folder (not yes implemented)
+# trash: Move message to the trash folder (not yet implemented)
 # none: do not do any message deletion
 #
 # Type: String
@@ -127,5 +127,5 @@ stores = [ "store01-Remote", "store02-Local" ]
 
 # Interval between folder syncs. Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
 # Type: String
-# Default: "expunge"
+# Default: "10m"
 #syncinterval = "10m"
