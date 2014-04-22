@@ -136,7 +136,7 @@ func NewImapFolder(folder *Mailfolder, metadatadir string, store *ImapStore, uid
 
 	m.client = client
 
-	_, err = client.Select(m.imappath, true)
+	_, err = client.Select(m.imappath, false)
 	if err != nil {
 		return nil, m.e.E(err)
 	}
