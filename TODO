@@ -2,13 +2,7 @@
 
 == Sync ==
 
-*) Folder Excludes
-
-*) donotdelete option
 *) option to not sync if syncstatus is missing but both folders have messages (and related force option)
-
-*) Dryrun option
-*) Option to choose only specified syncgroups
 
 *) Get passwords from external commands
 
