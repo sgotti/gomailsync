@@ -18,20 +18,21 @@
 package mailsync
 
 import (
+	"bufio"
 	"crypto/tls"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"unicode/utf8"
 
-	"bufio"
-	"code.google.com/p/go-imap/go1/imap"
+	"github.com/mxk/go-imap/imap"
+
 	"github.com/sgotti/gomailsync/config"
 	"github.com/sgotti/gomailsync/errors"
 	"github.com/sgotti/gomailsync/log"
-	"os"
 )
 
 type ImapStore struct {

@@ -23,7 +23,8 @@ import (
 	"strconv"
 	"strings"
 
-	"code.google.com/p/go-imap/go1/imap"
+	"github.com/mxk/go-imap/imap"
+
 	"github.com/sgotti/gomailsync/errors"
 	"github.com/sgotti/gomailsync/log"
 )
