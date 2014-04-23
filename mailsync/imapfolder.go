@@ -75,6 +75,11 @@ func (m *ImapFolder) getImapClient() (*imap.Client, error) {
 		return nil, err
 	}
 
+	_, err = client.Select(m.imappath, false)
+	if err != nil {
+		return nil, m.e.E(err)
+	}
+
 	m.client = client
 	return client, nil
 }
@@ -130,14 +135,7 @@ func NewImapFolder(folder *Mailfolder, metadatadir string, store *ImapStore, uid
 		dryrun:      dryrun,
 	}
 
-	client, err := m.getImapClient()
-	if err != nil {
-		return nil, m.e.E(err)
-	}
-
-	m.client = client
-
-	_, err = client.Select(m.imappath, false)
+	_, err = m.getImapClient()
 	if err != nil {
 		return nil, m.e.E(err)
 	}
