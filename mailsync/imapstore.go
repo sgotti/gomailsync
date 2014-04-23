@@ -110,10 +110,11 @@ func (m *ImapStore) getImapClient() (*imap.Client, error) {
 	}
 
 	client, err := m.newImapClient()
-
 	if err != nil {
 		return nil, err
 	}
+
+	m.client = client
 
 	return client, nil
 }
@@ -121,17 +122,22 @@ func (m *ImapStore) getImapClient() (*imap.Client, error) {
 func (m *ImapStore) getUIDValidity(folder *Mailfolder) (uidvalidity uint32, err error) {
 	// Get UIDValidity from the server
 	imappath := FolderToStorePath(folder, m.separator)
-	_, err = m.client.Select(imappath, true)
+	client, err := m.getImapClient()
 	if err != nil {
 		return 0, m.e.E(err)
 	}
-	defer m.client.Close(false)
+
+	_, err = client.Select(imappath, true)
+	if err != nil {
+		return 0, m.e.E(err)
+	}
+	defer client.Close(false)
 
 	m.logger.Debug("Mailbox status:")
-	for _, line := range strings.Split(m.client.Mailbox.String(), "\n") {
+	for _, line := range strings.Split(client.Mailbox.String(), "\n") {
 		m.logger.Debug(line)
 	}
-	serveruidvalidity := m.client.Mailbox.UIDValidity
+	serveruidvalidity := client.Mailbox.UIDValidity
 
 	// Verify that metadatadir has already an uidvalidity or create it from the server provided one
 	var mduidvalidity uint32
@@ -218,13 +224,10 @@ func NewImapStore(globalconfig *config.Config, config *config.StoreConfig, basem
 		e:            e,
 	}
 
-	client, err := m.getImapClient()
+	_, err = m.getImapClient()
 	if err != nil {
 		return nil, m.e.E(err)
 	}
-
-	// Save the imap client for the store
-	m.client = client
 
 	// Verify if the server supports uidplus extensions
 	if !m.client.Caps["UIDPLUS"] {
