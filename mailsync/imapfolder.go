@@ -203,6 +203,7 @@ func (m *ImapFolder) UpdateMessageList() error {
 		} else {
 			m.logger.Debug("Fetch error: ", rsp.Info)
 		}
+		return m.e.E(err)
 	}
 
 	return nil
