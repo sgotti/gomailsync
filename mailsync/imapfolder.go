@@ -276,7 +276,7 @@ func (m *ImapFolder) ReadMessage(uid uint32) ([]byte, error) {
 	if err != nil {
 		return nil, m.e.E(err)
 	}
-	cmd, err := client.Send("UID FETCH", set, "(BODY[])")
+	cmd, err := client.Send("UID FETCH", set, "(BODY.PEEK[])")
 	if err != nil {
 		return nil, m.e.E(err)
 	}
