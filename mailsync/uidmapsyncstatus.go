@@ -280,12 +280,10 @@ func (u *UIDMapSyncstatus) GetNewMessages(folder MailfolderManager) ([]uint32, e
 	}
 
 	newMessages := make([]uint32, 0)
-
-	// Order the uids
 	for uid, _ := range messages {
 		newMessages = append(newMessages, uid)
 	}
-	// Order the uids
+	// Sort the uids
 	sort.Sort(Uint32Slice(newMessages))
 	return newMessages, nil
 }
@@ -317,7 +315,7 @@ func (u *UIDMapSyncstatus) GetDeletedMessages(folder MailfolderManager) ([]uint3
 		}
 	}
 
-	// Order the uids
+	// Sort the uids
 	sort.Sort(Uint32Slice(deletedMessages))
 	return deletedMessages, nil
 }
@@ -349,12 +347,13 @@ func (u *UIDMapSyncstatus) GetChangedMessages(folder MailfolderManager) ([]uint3
 				return nil, u.e.E(err)
 			}
 			if flags != messageflags {
+				u.logger.Debugf("srcuid: %d, flags: \"%s\", syncstatus flags: \"%s\"", uid, messageflags, flags)
 				changedMessages = append(changedMessages, uid)
 			}
 		}
 	}
 
-	// Order the uids
+	// Sort the uids
 	sort.Sort(Uint32Slice(changedMessages))
 	return changedMessages, nil
 }

@@ -543,10 +543,10 @@ func (s *Syncgroup) SyncFolder(folder *Mailfolder) (err error) {
 				return e.E(err)
 			}
 
-			logger.Debug("Updating message flags to message with dstuid: %d from destination store: %s to flags: %s", dstuid, dststore.Name(), flags)
+			logger.Debugf("Updating message flags to message with dstuid %d in destination store %s to flags: \"%s\"", dstuid, dststore.Name(), flags)
 
 			if dstfolder.HasUID(dstuid) {
-				logger.Debug("Changing message with dstuid:", dstuid)
+				logger.Debugf("Changing message with dstuid: %d", dstuid)
 				err = dstfolder.SetFlags(dstuid, flags)
 				if err != nil {
 					err := fmt.Errorf("dstfolder.SetFlags error: %s", err)
