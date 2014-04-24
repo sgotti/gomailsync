@@ -302,6 +302,15 @@ func (m *ImapFolder) ReadMessage(uid uint32) ([]byte, error) {
 		client.Data = nil
 	}
 
+	// Check command completion status
+	if rsp, err := cmd.Result(imap.OK); err != nil {
+		if err == imap.ErrAborted {
+			fmt.Println("Fetch command aborted")
+		} else {
+			fmt.Println("Fetch error:", rsp.Info)
+		}
+		return nil, m.e.E(err)
+	}
 	return body, nil
 
 }
