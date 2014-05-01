@@ -58,50 +58,29 @@ func (s *Syncgroup) newStore(globalconfig *config.Config, config *config.StoreCo
 }
 
 func mergeFolders(folders1 []*Mailfolder, folders2 []*Mailfolder, ignoreexcluded bool) []*Mailfolder {
-	folders := folders1
+	fm := make(map[string]*Mailfolder, 0)
 
-	for _, f := range folders2 {
-		var ok bool = true
-		for _, fo := range folders {
-			if f.String() == fo.String() {
-				ok = false
-				break
-			}
-		}
-		if ok {
-			folders = append(folders, f)
-		}
+	for _, f := range folders1 {
+		fm[f.String()] = f
 	}
 
-	if !ignoreexcluded {
-		return folders
-	}
-
-	efolders := make([]*Mailfolder, 0)
-	// Remove folders if folders1 or folders2 have a folder excluded
-	for _, f := range folders {
-		var f1 *Mailfolder
-		var f2 *Mailfolder
-		for _, f1 = range folders1 {
-			if f.String() == f1.String() {
-				break
-			}
-		}
-		for _, f2 = range folders2 {
-			if f.String() == f2.String() {
-				break
-			}
-		}
-
-		if f1 != nil && f2 != nil {
-			if !(f1.Excluded || f2.Excluded) {
-				efolders = append(efolders, f)
+	for _, f2 := range folders2 {
+		if _, ok := fm[f2.String()]; ok {
+			if f2.Excluded {
+				fm[f2.String()].Excluded = true
 			}
 		} else {
+			fm[f2.String()] = f2
+		}
+	}
+
+	// Remove excluded folders
+	efolders := make([]*Mailfolder, 0)
+	for _, f := range fm {
+		if !(ignoreexcluded && f.Excluded) {
 			efolders = append(efolders, f)
 		}
 	}
-
 	return efolders
 }
 

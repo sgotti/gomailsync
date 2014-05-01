@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/sgotti/gomailsync/config"
+	"reflect"
 )
 
 var synccgrouptest struct {
@@ -236,6 +237,99 @@ func TestSync(t *testing.T) {
 
 }
 
+func TestMergeFolders(t *testing.T) {
+	fs1 := []*Mailfolder{}
+	fs2 := []*Mailfolder{}
+
+	ef1 := &Mailfolder{Name: []string{"folder01"}}
+	ef2 := &Mailfolder{Name: []string{"folder02"}}
+	ef3 := &Mailfolder{Name: []string{"folder03"}}
+	ef4 := &Mailfolder{Name: []string{"folder04"}}
+	ef5 := &Mailfolder{Name: []string{"folder05"}}
+	ef6 := &Mailfolder{Name: []string{"folder06"}}
+
+	emfs := []*Mailfolder{}
+	mfs := mergeFolders(fs1, fs2, false)
+	if !checkMergedFolders(emfs, mfs) {
+		t.Fatalf("Expecting folders %v, found %v", emfs, mfs)
+	}
+
+	fs1 = append(fs1, &Mailfolder{Name: []string{"folder01"}})
+	emfs = []*Mailfolder{ef1}
+	mfs = mergeFolders(fs1, fs2, false)
+	if !checkMergedFolders(emfs, mfs) {
+		t.Fatalf("Expecting folders %v, found %v", emfs, mfs)
+	}
+
+	fs1 = append(fs1, &Mailfolder{Name: []string{"folder02"}})
+	emfs = []*Mailfolder{ef1, ef2}
+	mfs = mergeFolders(fs1, fs2, false)
+	if !checkMergedFolders(emfs, mfs) {
+		t.Fatalf("Expecting folders %v, found %v", emfs, mfs)
+	}
+
+	fs2 = append(fs2, &Mailfolder{Name: []string{"folder02"}})
+	mfs = mergeFolders(fs1, fs2, false)
+	if !checkMergedFolders(emfs, mfs) {
+		t.Fatalf("Expecting folders %v, found %v", emfs, mfs)
+	}
+
+	fs2 = append(fs2, &Mailfolder{Name: []string{"folder03"}})
+	emfs = []*Mailfolder{ef1, ef2, ef3}
+	mfs = mergeFolders(fs1, fs2, false)
+	if !checkMergedFolders(emfs, mfs) {
+		t.Fatalf("Expecting folders %v, found %v", emfs, mfs)
+	}
+
+	fs1 = append(fs1, &Mailfolder{Name: []string{"folder03"}})
+	mfs = mergeFolders(fs1, fs2, false)
+	if !checkMergedFolders(emfs, mfs) {
+		t.Fatalf("Expecting folders %v, found %v", emfs, mfs)
+	}
+
+	fs1 = append(fs1, &Mailfolder{Name: []string{"folder04"}, Excluded: true})
+	ef4.Excluded = true
+	emfs = []*Mailfolder{ef1, ef2, ef3, ef4}
+	mfs = mergeFolders(fs1, fs2, false)
+	if !checkMergedFolders(emfs, mfs) {
+		t.Fatalf("Expecting folders %v, found %v", emfs, mfs)
+	}
+
+	emfs = []*Mailfolder{ef1, ef2, ef3}
+	mfs = mergeFolders(fs1, fs2, true)
+	if !checkMergedFolders(emfs, mfs) {
+		t.Fatalf("Expecting folders %v, found %v", emfs, mfs)
+	}
+
+	fs1 = append(fs1, &Mailfolder{Name: []string{"folder05"}, Excluded: false})
+	fs2 = append(fs2, &Mailfolder{Name: []string{"folder05"}, Excluded: true})
+	ef5.Excluded = true
+	emfs = []*Mailfolder{ef1, ef2, ef3, ef4, ef5}
+	mfs = mergeFolders(fs1, fs2, false)
+	if !checkMergedFolders(emfs, mfs) {
+		t.Fatalf("Expecting folders %v, found %v", emfs, mfs)
+	}
+
+	emfs = []*Mailfolder{ef1, ef2, ef3}
+	mfs = mergeFolders(fs1, fs2, true)
+	if !checkMergedFolders(emfs, mfs) {
+		t.Fatalf("Expecting folders %v, found %v", emfs, mfs)
+	}
+
+	fs1 = append(fs1, &Mailfolder{Name: []string{"folder06"}})
+	emfs = []*Mailfolder{ef1, ef2, ef3, ef4, ef5, ef6}
+	mfs = mergeFolders(fs1, fs2, false)
+	if !checkMergedFolders(emfs, mfs) {
+		t.Fatalf("Expecting folders %v, found %v", emfs, mfs)
+	}
+
+	emfs = []*Mailfolder{ef1, ef2, ef3, ef6}
+	mfs = mergeFolders(fs1, fs2, true)
+	if !checkMergedFolders(emfs, mfs) {
+		t.Fatalf("Expecting folders %v, found %v", emfs, mfs)
+	}
+}
+
 func addMessage(t *testing.T, store StoreManager, folder *Mailfolder, name string, subdir string) {
 	foldermanager, _ := store.GetMailfolderManager(folder)
 	var maildirfoldermanager *MaildirFolder = foldermanager.(*MaildirFolder)
@@ -348,4 +442,19 @@ func verifySync(t *testing.T, syncgroup *Syncgroup, folder *Mailfolder, expected
 			t.Fatalf("Wrong flags! message1 uid: %d flags: %s, message2 uid: %d flags: %s", u1, flags1, u2, flags2)
 		}
 	}
+}
+
+func checkMergedFolders(mf1 []*Mailfolder, mf2 []*Mailfolder) bool {
+	if len(mf1) != len(mf2) {
+		return false
+	}
+	mf1m := make(map[string]Mailfolder)
+	mf2m := make(map[string]Mailfolder)
+	for _, f := range mf1 {
+		mf1m[f.String()] = *f
+	}
+	for _, f := range mf2 {
+		mf2m[f.String()] = *f
+	}
+	return reflect.DeepEqual(mf1m, mf2m)
 }
