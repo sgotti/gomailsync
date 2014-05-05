@@ -111,7 +111,7 @@ func SetupSyncgroupTest(t *testing.T) {
 	synccgrouptest.syncgroup1conf = &syncgroup1conf
 }
 
-func TestSync(t *testing.T) {
+func TestSyncgroupSync(t *testing.T) {
 
 	SetupSyncgroupTest(t)
 
@@ -238,7 +238,7 @@ func TestSync(t *testing.T) {
 
 }
 
-func TestMergeFolders(t *testing.T) {
+func TestSyncgroupMergeFolders(t *testing.T) {
 	fs1 := []Mailfolder{}
 	fs2 := []Mailfolder{}
 

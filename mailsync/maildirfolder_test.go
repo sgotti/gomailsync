@@ -103,7 +103,7 @@ func SetupMaildirFolderTest(t *testing.T) {
 
 }
 
-func TestSplitFilename(t *testing.T) {
+func TestMaildirFolderSplitFilename(t *testing.T) {
 	SetupMaildirFolderTest(t)
 	fm1, _ := maildirfoldertest.fm1.(*MaildirFolder)
 
@@ -201,7 +201,7 @@ func TestUpdateMessageList(t *testing.T) {
 
 }
 
-func TestDeleteMessage(t *testing.T) {
+func TestMaildirFolderDeleteMessage(t *testing.T) {
 	SetupMaildirFolderTest(t)
 	fm1 := maildirfoldertest.fm1
 
@@ -228,7 +228,7 @@ func TestDeleteMessage(t *testing.T) {
 	fm1.Close()
 }
 
-func TestAddMessages(t *testing.T) {
+func TestMaildirFolderAddMessages(t *testing.T) {
 	SetupMaildirFolderTest(t)
 	fm1 := maildirfoldertest.fm1
 
@@ -251,7 +251,7 @@ func TestAddMessages(t *testing.T) {
 	fm1.Close()
 }
 
-func TestSetFlags(t *testing.T) {
+func TestMaildirFolderSetFlags(t *testing.T) {
 	SetupMaildirFolderTest(t)
 	fm1 := maildirfoldertest.fm1
 
