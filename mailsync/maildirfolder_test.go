@@ -78,12 +78,12 @@ func SetupMaildirFolderTest(t *testing.T) {
 	store1, _ := newStore(&globalconfig, &store1conf)
 
 	folder := &Mailfolder{[]string{"INBOX"}, false}
-	err := store1.CreateFolder(folder)
+	err := store1.CreateFolder(folder.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tmpfm, err := store1.GetMailfolderManager(folder)
+	tmpfm, err := store1.GetMailfolderManager(folder.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +93,7 @@ func SetupMaildirFolderTest(t *testing.T) {
 		tmpfm.AddMessage(uint32(i), "", data)
 	}
 
-	fm1, _ := store1.GetMailfolderManager(folder)
+	fm1, _ := store1.GetMailfolderManager(folder.Name)
 
 	maildirfoldertest.store1 = store1
 	maildirfoldertest.fm1 = fm1
@@ -136,7 +136,7 @@ func TestUpdateMessageList(t *testing.T) {
 	SetupMaildirFolderTest(t)
 	fm1, _ := maildirfoldertest.fm1.(*MaildirFolder)
 
-	folder := &Mailfolder{[]string{"INBOX"}, false}
+	folder := Mailfolder{[]string{"INBOX"}, false}
 
 	var startuid uint32 = 100000
 	expected := 10
@@ -205,7 +205,7 @@ func TestDeleteMessage(t *testing.T) {
 	SetupMaildirFolderTest(t)
 	fm1 := maildirfoldertest.fm1
 
-	folder := &Mailfolder{[]string{"INBOX"}, false}
+	folder := Mailfolder{[]string{"INBOX"}, false}
 
 	err := fm1.UpdateMessageList()
 	if err != nil {
@@ -232,7 +232,7 @@ func TestAddMessages(t *testing.T) {
 	SetupMaildirFolderTest(t)
 	fm1 := maildirfoldertest.fm1
 
-	folder := &Mailfolder{[]string{"INBOX"}, false}
+	folder := Mailfolder{[]string{"INBOX"}, false}
 
 	err := fm1.UpdateMessageList()
 	if err != nil {
@@ -255,7 +255,7 @@ func TestSetFlags(t *testing.T) {
 	SetupMaildirFolderTest(t)
 	fm1 := maildirfoldertest.fm1
 
-	folder := &Mailfolder{[]string{"INBOX"}, false}
+	folder := Mailfolder{[]string{"INBOX"}, false}
 
 	err := fm1.UpdateMessageList()
 	if err != nil {
@@ -277,8 +277,8 @@ func TestSetFlags(t *testing.T) {
 	fm1.Close()
 }
 
-func countMessages(t *testing.T, store StoreManager, folder *Mailfolder, expected int) (err error) {
-	fm, _ := store.GetMailfolderManager(folder)
+func countMessages(t *testing.T, store StoreManager, folder Mailfolder, expected int) (err error) {
+	fm, _ := store.GetMailfolderManager(folder.Name)
 	defer fm.Close()
 	err = fm.UpdateMessageList()
 	if err != nil {

@@ -17,13 +17,15 @@
 
 package mailsync
 
+type foldername []string
+
 type Mailfolder struct {
-	Name     []string
+	Name     foldername
 	Excluded bool
 }
 
-func (f *Mailfolder) String() string {
-	return FolderToStorePath(f, '/')
+func (f Mailfolder) String() string {
+	return FolderToStorePath(f.Name, '/')
 }
 
 func (f *Mailfolder) Equals(f2 *Mailfolder) bool {

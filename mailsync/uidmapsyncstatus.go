@@ -32,7 +32,7 @@ import (
 
 type UIDMapSyncstatus struct {
 	metadatadir string
-	folder      *Mailfolder
+	fname       foldername
 	StatusDB    *sql.DB
 	activeTx    *sql.Tx
 	srcstore    Storenumber
@@ -53,13 +53,13 @@ func (p Uint32Slice) Len() int           { return len(p) }
 func (p Uint32Slice) Less(i, j int) bool { return p[i] < p[j] }
 func (p Uint32Slice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-func NewUIDMapSyncstatus(globalconfig *config.Config, config *config.SyncgroupConfig, basemetadatadir string, folder *Mailfolder) (u Syncstatus, err error) {
-	logprefix := fmt.Sprintf("%s %s %s", "uidmapsyncstatus", config.Name, folder)
+func NewUIDMapSyncstatus(globalconfig *config.Config, config *config.SyncgroupConfig, basemetadatadir string, fname foldername) (u Syncstatus, err error) {
+	logprefix := fmt.Sprintf("%s %s %s", "uidmapsyncstatus", config.Name, fname)
 	errprefix := logprefix
 	logger := log.GetLogger(logprefix, globalconfig.LogLevel)
 	e := errors.New(errprefix)
 
-	metadatadir := filepath.Join(basemetadatadir, "uidmapsyncstatus", FolderToStorePath(folder, os.PathSeparator))
+	metadatadir := filepath.Join(basemetadatadir, "uidmapsyncstatus", FolderToStorePath(fname, os.PathSeparator))
 	err = os.MkdirAll(metadatadir, 0777)
 	if err != nil {
 		return nil, e.E(err)
@@ -81,7 +81,7 @@ func NewUIDMapSyncstatus(globalconfig *config.Config, config *config.SyncgroupCo
 	}
 	u = &UIDMapSyncstatus{
 		metadatadir: metadatadir,
-		folder:      folder,
+		fname:       fname,
 		StatusDB:    db,
 		logger:      logger,
 		e:           e,

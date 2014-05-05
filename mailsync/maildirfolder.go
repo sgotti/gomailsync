@@ -214,7 +214,7 @@ func NewMaildirFolder(folder *Mailfolder, maildir string, metadatadir string, st
 func (m *MaildirFolder) UpdateMessageList() error {
 	m.messages = make(map[uint32]*MaildirMessageInfo)
 
-	if m.dryrun && !m.store.HasFolder(m.folder) {
+	if m.dryrun && !m.store.HasFolder(m.folder.Name) {
 		return nil
 	}
 

@@ -32,12 +32,22 @@ func StringInSlice(a string, list []string) bool {
 	return false
 }
 
-func FolderToStorePath(folder *Mailfolder, separator rune) string {
+func StrsEquals(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
 
+func FolderToStorePath(name foldername, separator rune) string {
 	// TODO Escape possible(?) os path separator in folder name
-	name := strings.Join(folder.Name, string(separator))
-
-	return name
+	path := strings.Join(name, string(separator))
+	return path
 }
 
 func MkdirIfNotExists(name string) (err error) {
@@ -80,4 +90,43 @@ func removeFlags(flags string, newflags string) string {
 		outflags = strings.Replace(outflags, string(newflag), "", -1)
 	}
 	return CleanFlags(outflags)
+}
+
+func applyRegExpPatterns(store StoreManager, folders []*Mailfolder) error {
+	rps := make([]*RegexpPattern, 0)
+	for _, p := range store.Config().RegexpPatterns {
+		rp, err := RegexpFromPattern(p)
+		if err != nil {
+			return err
+		}
+		rps = append(rps, rp)
+
+	}
+
+	separator, err := store.Separator()
+	if err != nil {
+		return err
+	}
+
+next:
+	for _, f := range folders {
+		// If folders already ecluded ignore it
+		if f.Excluded {
+			continue
+		}
+		for _, rp := range rps {
+			if rp.not == false {
+				if !rp.re.MatchString(FolderToStorePath(f.Name, separator)) {
+					store.SetFolderExcluded(f.Name, true)
+					continue next
+				}
+			} else {
+				if rp.re.MatchString(FolderToStorePath(f.Name, separator)) {
+					store.SetFolderExcluded(f.Name, true)
+					continue next
+				}
+			}
+		}
+	}
+	return nil
 }

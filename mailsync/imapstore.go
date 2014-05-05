@@ -121,7 +121,7 @@ func (m *ImapStore) getImapClient() (*imap.Client, error) {
 
 func (m *ImapStore) getUIDValidity(folder *Mailfolder) (uidvalidity uint32, err error) {
 	// Get UIDValidity from the server
-	imappath := FolderToStorePath(folder, m.separator)
+	imappath := FolderToStorePath(folder.Name, m.separator)
 	client, err := m.getImapClient()
 	if err != nil {
 		return 0, m.e.E(err)
@@ -141,7 +141,7 @@ func (m *ImapStore) getUIDValidity(folder *Mailfolder) (uidvalidity uint32, err 
 
 	// Verify that metadatadir has already an uidvalidity or create it from the server provided one
 	var mduidvalidity uint32
-	foldermetadatadir := filepath.Join(m.metadatadir, FolderToStorePath(folder, os.PathSeparator))
+	foldermetadatadir := filepath.Join(m.metadatadir, FolderToStorePath(folder.Name, os.PathSeparator))
 	uidvaliditypath := filepath.Join(foldermetadatadir, "uidvalidity")
 	f, err := os.Open(uidvaliditypath)
 	if err != nil {
@@ -239,25 +239,43 @@ func NewImapStore(globalconfig *config.Config, config *config.StoreConfig, basem
 	return
 }
 
-func (m *ImapStore) CreateFolder(folder *Mailfolder) (err error) {
+func (m *ImapStore) CreateFolder(name foldername) (err error) {
 	client, err := m.getImapClient()
 	if err != nil {
 		return m.e.E(err)
 	}
 
-	_, err = imap.Wait(client.Create(FolderToStorePath(folder, m.separator)))
+	_, err = imap.Wait(client.Create(FolderToStorePath(name, m.separator)))
 	if err != nil {
 		return m.e.E(err)
 	}
 
+	// Add folder to the list
+	m.folders = append(m.folders, &Mailfolder{Name: name, Excluded: false})
+
 	return
 }
 
-func (m *ImapStore) HasFolder(folder *Mailfolder) bool {
+func (m *ImapStore) SetFolderExcluded(name foldername, excluded bool) error {
+	if f := m.getFolder(name); f != nil {
+		f.Excluded = excluded
+		return nil
+	}
+	return m.e.E(fmt.Errorf("Folder %s, doesn't exists", name))
+}
+
+func (m *ImapStore) getFolder(name foldername) *Mailfolder {
 	for _, f := range m.folders {
-		if FolderToStorePath(folder, m.separator) == FolderToStorePath(f, m.separator) {
-			return true
+		if StrsEquals(name, f.Name) {
+			return f
 		}
+	}
+	return nil
+}
+
+func (m *ImapStore) HasFolder(name foldername) bool {
+	if f := m.getFolder(name); f != nil {
+		return true
 	}
 	return false
 }
@@ -301,33 +319,46 @@ func (m *ImapStore) UpdateFolderList() error {
 
 	m.separator = separator
 
-	return nil
+	err = applyRegExpPatterns(m, m.folders)
+	if err != nil {
+		return m.e.E(err)
+	}
 
+	return nil
 }
 
 func (m *ImapStore) Separator() (rune, error) {
 	return m.separator, nil
 }
 
-func (m *ImapStore) GetFolders() []*Mailfolder {
-	return m.folders
+func (m *ImapStore) GetFolders() []Mailfolder {
+	folders := make([]Mailfolder, len(m.folders))
+	for i, f := range m.folders {
+		folders[i] = *f
+	}
+	return folders
 }
 
-func (m *ImapStore) GetMailfolderManager(folder *Mailfolder) (manager MailfolderManager, err error) {
+func (m *ImapStore) GetMailfolderManager(name foldername) (manager MailfolderManager, err error) {
 	m.Lock()
 	defer m.Unlock()
 
-	if !m.HasFolder(folder) {
-		err = m.CreateFolder(folder)
+	if !m.HasFolder(name) {
+		err = m.CreateFolder(name)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	foldermetadatadir := filepath.Join(m.metadatadir, FolderToStorePath(folder, os.PathSeparator))
+	foldermetadatadir := filepath.Join(m.metadatadir, FolderToStorePath(name, os.PathSeparator))
 	err = os.MkdirAll(foldermetadatadir, 0777)
 	if err != nil {
 		return nil, m.e.E(err)
+	}
+
+	folder := m.getFolder(name)
+	if folder == nil {
+		return nil, m.e.E(fmt.Errorf("Cannot get folder %s", name))
 	}
 
 	uidvalidity, err := m.getUIDValidity(folder)
@@ -337,9 +368,6 @@ func (m *ImapStore) GetMailfolderManager(folder *Mailfolder) (manager Mailfolder
 
 	manager, err = NewImapFolder(folder, foldermetadatadir, m, uidvalidity, m.dryrun)
 
-	if err != nil {
-		return nil, m.e.E(err)
-	}
 	return
 }
 

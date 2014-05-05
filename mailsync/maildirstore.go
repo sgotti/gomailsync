@@ -51,9 +51,9 @@ func (m *MaildirStore) isInbox(relpath string) bool {
 	return false
 }
 
-func (m *MaildirStore) maildirPath(folder *Mailfolder) string {
-	folderpath := FolderToStorePath(folder, m.separator)
-	if folder.Equals(&Mailfolder{Name: []string{"INBOX"}}) {
+func (m *MaildirStore) maildirPath(name foldername) string {
+	folderpath := FolderToStorePath(name, m.separator)
+	if StrsEquals(name, []string{"INBOX"}) {
 		folderpath = filepath.Clean(m.config.InboxPath)
 	}
 	return folderpath
@@ -77,9 +77,9 @@ func (m *MaildirStore) readFolderUID(path string) (folderUID string, err error) 
 	return
 }
 
-func (m *MaildirStore) getFolderUID(folder *Mailfolder) (folderUID string, err error) {
-	foldermaildir := filepath.Join(m.maildir, m.maildirPath(folder))
-	foldermetadatadir := filepath.Join(m.metadatadir, FolderToStorePath(folder, os.PathSeparator))
+func (m *MaildirStore) getFolderUID(name foldername) (folderUID string, err error) {
+	foldermaildir := filepath.Join(m.maildir, m.maildirPath(name))
+	foldermetadatadir := filepath.Join(m.metadatadir, FolderToStorePath(name, os.PathSeparator))
 
 	mddirfilepath := filepath.Join(foldermetadatadir, "folderuid")
 	maildirfilepath := filepath.Join(foldermaildir, ".gomailsync-folderuid")
@@ -182,8 +182,8 @@ func NewMaildirStore(globalconfig *config.Config, config *config.StoreConfig, ba
 	return
 }
 
-func (m *MaildirStore) CreateFolder(folder *Mailfolder) (err error) {
-	foldermaildir := filepath.Join(m.maildir, m.maildirPath(folder))
+func (m *MaildirStore) CreateFolder(name foldername) (err error) {
+	foldermaildir := filepath.Join(m.maildir, m.maildirPath(name))
 
 	for _, d := range []string{"cur", "new", "tmp"} {
 		err := os.MkdirAll(filepath.Join(foldermaildir, d), 0777)
@@ -192,7 +192,7 @@ func (m *MaildirStore) CreateFolder(folder *Mailfolder) (err error) {
 		}
 	}
 
-	foldermetadatadir := filepath.Join(m.metadatadir, FolderToStorePath(folder, os.PathSeparator))
+	foldermetadatadir := filepath.Join(m.metadatadir, FolderToStorePath(name, os.PathSeparator))
 
 	mddirfilepath := filepath.Join(foldermetadatadir, "folderuid")
 	maildirfilepath := filepath.Join(foldermaildir, ".gomailsync-folderuid")
@@ -202,7 +202,7 @@ func (m *MaildirStore) CreateFolder(folder *Mailfolder) (err error) {
 		return m.e.E(err)
 	}
 
-	folderUID, err := m.getFolderUID(folder)
+	folderUID, err := m.getFolderUID(name)
 	if err != nil {
 		return m.e.E(err)
 	}
@@ -228,14 +228,31 @@ func (m *MaildirStore) CreateFolder(folder *Mailfolder) (err error) {
 
 	m.logger.Debugf("folderUID: %s", folderUID)
 
+	// Add folder to the list
+	m.folders = append(m.folders, &Mailfolder{Name: name, Excluded: false})
 	return err
 }
 
-func (m *MaildirStore) HasFolder(folder *Mailfolder) bool {
+func (m *MaildirStore) SetFolderExcluded(name foldername, excluded bool) error {
+	if f := m.getFolder(name); f != nil {
+		f.Excluded = excluded
+		return nil
+	}
+	return m.e.E(fmt.Errorf("Folder %s, doesn't exists", name))
+}
+
+func (m *MaildirStore) getFolder(name foldername) *Mailfolder {
 	for _, f := range m.folders {
-		if FolderToStorePath(folder, m.separator) == FolderToStorePath(f, m.separator) {
-			return true
+		if StrsEquals(name, f.Name) {
+			return f
 		}
+	}
+	return nil
+}
+
+func (m *MaildirStore) HasFolder(name foldername) bool {
+	if f := m.getFolder(name); f != nil {
+		return true
 	}
 	return false
 }
@@ -248,12 +265,12 @@ func (m *MaildirStore) UpdateFolderList() error {
 			var ok uint8 = 0
 			f, err := os.Open(path)
 			if err != nil {
-				return err
+				return m.e.E(err)
 			}
 			defer f.Close()
 			filenames, err := f.Readdirnames(0)
 			if err != nil {
-				return err
+				return m.e.E(err)
 			}
 
 			for _, n := range filenames {
@@ -265,13 +282,13 @@ func (m *MaildirStore) UpdateFolderList() error {
 			if ok == 3 {
 				relpath, err := filepath.Rel(m.maildir, path)
 				if err != nil {
-					return err
+					return m.e.E(err)
 				}
 
 				// Verify that the if relpath is inbox (case insensitive) then its the configured inbox
 				if strings.ToLower(filepath.Clean(relpath)) == "inbox" && !m.isInbox(relpath) {
 					err := fmt.Errorf("directory with name \"%s\", doesn't match configured inbox path \"%s\"", filepath.Clean(relpath), (m.config.InboxPath))
-					return err
+					return m.e.E(err)
 				}
 				name := strings.Split(relpath, string(m.separator))
 				// Is this path of the configured INBOX?
@@ -288,33 +305,49 @@ func (m *MaildirStore) UpdateFolderList() error {
 		}
 		return nil
 	})
+	if err != nil {
+		return m.e.E(err)
+	}
 
-	return err
+	err = applyRegExpPatterns(m, m.folders)
+	if err != nil {
+		return m.e.E(err)
+	}
+
+	return nil
 }
 
 func (m *MaildirStore) Separator() (rune, error) {
 	return m.separator, nil
 }
 
-func (m *MaildirStore) GetFolders() []*Mailfolder {
-	return m.folders
+func (m *MaildirStore) GetFolders() []Mailfolder {
+	folders := make([]Mailfolder, len(m.folders))
+	for i, f := range m.folders {
+		folders[i] = *f
+	}
+	return folders
 }
 
-func (m *MaildirStore) GetMailfolderManager(folder *Mailfolder) (manager MailfolderManager, err error) {
-	maildir := filepath.Join(m.maildir, m.maildirPath(folder))
+func (m *MaildirStore) GetMailfolderManager(name foldername) (manager MailfolderManager, err error) {
+	maildir := filepath.Join(m.maildir, m.maildirPath(name))
 
-	if !m.HasFolder(folder) && !m.dryrun {
-		err = m.CreateFolder(folder)
+	if !m.HasFolder(name) && !m.dryrun {
+		err = m.CreateFolder(name)
 		if err != nil {
 			return nil, m.e.E(err)
 		}
 	}
 
-	folderUID, err := m.getFolderUID(folder)
+	folderUID, err := m.getFolderUID(name)
 	if err != nil {
 		return nil, m.e.E(err)
 	}
 
+	folder := m.getFolder(name)
+	if folder == nil {
+		return nil, m.e.E(fmt.Errorf("Cannot get folder %s", name))
+	}
 	manager, err = NewMaildirFolder(folder, maildir, m.metadatadir, m, folderUID, m.dryrun)
 
 	return

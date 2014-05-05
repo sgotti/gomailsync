@@ -120,7 +120,7 @@ func NewImapFolder(folder *Mailfolder, metadatadir string, store *ImapStore, uid
 		return nil, e.E(err)
 	}
 
-	imappath := FolderToStorePath(folder, separator)
+	imappath := FolderToStorePath(folder.Name, separator)
 	m = &ImapFolder{
 		folder:      folder,
 		store:       store,
@@ -146,7 +146,7 @@ func NewImapFolder(folder *Mailfolder, metadatadir string, store *ImapStore, uid
 func (m *ImapFolder) UpdateMessageList() error {
 	m.messages = make(map[uint32]*ImapMessageInfo)
 
-	if m.dryrun && !m.store.HasFolder(m.folder) {
+	if m.dryrun && !m.store.HasFolder(m.folder.Name) {
 		return nil
 	}
 

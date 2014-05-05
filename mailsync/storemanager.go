@@ -22,11 +22,13 @@ import (
 )
 
 type StoreManager interface {
-	CreateFolder(*Mailfolder) error
+	CreateFolder(foldername) error
 	UpdateFolderList() error
 	Separator() (rune, error)
-	GetFolders() []*Mailfolder
-	GetMailfolderManager(*Mailfolder) (MailfolderManager, error)
+	SetFolderExcluded(name foldername, excluded bool) error
+	HasFolder(foldername) bool
+	GetFolders() []Mailfolder
+	GetMailfolderManager(foldername) (MailfolderManager, error)
 
 	Name() string
 	Config() *config.StoreConfig

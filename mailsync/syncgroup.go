@@ -57,8 +57,8 @@ func (s *Syncgroup) newStore(globalconfig *config.Config, config *config.StoreCo
 	return m, err
 }
 
-func mergeFolders(folders1 []*Mailfolder, folders2 []*Mailfolder, ignoreexcluded bool) []*Mailfolder {
-	fm := make(map[string]*Mailfolder, 0)
+func mergeFolders(folders1 []Mailfolder, folders2 []Mailfolder, ignoreexcluded bool) []Mailfolder {
+	fm := make(map[string]Mailfolder, 0)
 
 	for _, f := range folders1 {
 		fm[f.String()] = f
@@ -67,7 +67,9 @@ func mergeFolders(folders1 []*Mailfolder, folders2 []*Mailfolder, ignoreexcluded
 	for _, f2 := range folders2 {
 		if _, ok := fm[f2.String()]; ok {
 			if f2.Excluded {
-				fm[f2.String()].Excluded = true
+				f1 := fm[f2.String()]
+				f1.Excluded = true
+				fm[f1.String()] = f1
 			}
 		} else {
 			fm[f2.String()] = f2
@@ -75,7 +77,7 @@ func mergeFolders(folders1 []*Mailfolder, folders2 []*Mailfolder, ignoreexcluded
 	}
 
 	// Remove excluded folders
-	efolders := make([]*Mailfolder, 0)
+	efolders := make([]Mailfolder, 0)
 	for _, f := range fm {
 		if !(ignoreexcluded && f.Excluded) {
 			efolders = append(efolders, f)
@@ -98,45 +100,6 @@ func foldersLen(folders []Mailfolder, ignoreexcluded bool) (count int) {
 	return
 }
 
-func applyRegExpPatterns(store StoreManager, folders []*Mailfolder) error {
-	rps := make([]*RegexpPattern, 0)
-	for _, p := range store.Config().RegexpPatterns {
-		rp, err := RegexpFromPattern(p)
-		if err != nil {
-			return err
-		}
-		rps = append(rps, rp)
-
-	}
-
-	separator, err := store.Separator()
-	if err != nil {
-		return err
-	}
-
-next:
-	for _, f := range folders {
-		// If folders already ecluded ignore it
-		if f.Excluded {
-			continue
-		}
-		for _, rp := range rps {
-			if rp.not == false {
-				if !rp.re.MatchString(FolderToStorePath(f, separator)) {
-					f.Excluded = true
-					continue next
-				}
-			} else {
-				if rp.re.MatchString(FolderToStorePath(f, separator)) {
-					f.Excluded = true
-					continue next
-				}
-			}
-		}
-	}
-	return nil
-}
-
 func removeIgnoredMessages(messages []uint32, fm MailfolderManager) []uint32 {
 	filteredmessages := make([]uint32, 0)
 	for _, m := range messages {
@@ -147,21 +110,12 @@ func removeIgnoredMessages(messages []uint32, fm MailfolderManager) []uint32 {
 	return filteredmessages
 }
 
-func (s *Syncgroup) getSyncFolders() (folders []*Mailfolder, err error) {
+func (s *Syncgroup) getSyncFolders() (folders []Mailfolder, err error) {
 	store1 := s.stores[0]
 	store2 := s.stores[1]
 
 	folders1 := store1.GetFolders()
 	folders2 := store2.GetFolders()
-
-	err = applyRegExpPatterns(store1, folders1)
-	if err != nil {
-		return nil, s.e.E(err)
-	}
-	err = applyRegExpPatterns(store2, folders2)
-	if err != nil {
-		return nil, s.e.E(err)
-	}
 
 	folders = mergeFolders(folders1, folders2, true)
 
@@ -318,17 +272,17 @@ func (s *Syncgroup) Sync(interactions int) (err error) {
 
 type SyncResult struct {
 	Error       error
-	Folder      *Mailfolder
+	Folder      Mailfolder
 	Folderindex int
 }
 
-func (s *Syncgroup) SyncFolderWrapper(folder *Mailfolder, folderindex int, out chan SyncResult) {
+func (s *Syncgroup) SyncFolderWrapper(folder Mailfolder, folderindex int, out chan SyncResult) {
 	err := s.SyncFolder(folder)
 	result := SyncResult{err, folder, folderindex}
 	out <- result
 }
 
-func (s *Syncgroup) SyncFolder(folder *Mailfolder) (err error) {
+func (s *Syncgroup) SyncFolder(folder Mailfolder) (err error) {
 	logprefix := fmt.Sprintf("%s %s %s", "syncgroup", s.name, folder)
 	errprefix := logprefix
 	logger := log.GetLogger(logprefix, s.globalconfig.LogLevel)
@@ -339,7 +293,7 @@ func (s *Syncgroup) SyncFolder(folder *Mailfolder) (err error) {
 	store1 := s.stores[0]
 	store2 := s.stores[1]
 
-	syncstatus, err := NewUIDMapSyncstatus(s.globalconfig, s.config, s.metadatadir, folder)
+	syncstatus, err := NewUIDMapSyncstatus(s.globalconfig, s.config, s.metadatadir, folder.Name)
 	if err != nil {
 		return e.E(err)
 	}
@@ -347,13 +301,13 @@ func (s *Syncgroup) SyncFolder(folder *Mailfolder) (err error) {
 
 	syncstatus.UpdateSyncstatus()
 
-	folder1, err := store1.GetMailfolderManager(folder)
+	folder1, err := store1.GetMailfolderManager(folder.Name)
 	if err != nil {
 		return e.E(err)
 	}
 	defer folder1.Close()
 
-	folder2, err := store2.GetMailfolderManager(folder)
+	folder2, err := store2.GetMailfolderManager(folder.Name)
 	if err != nil {
 		return e.E(err)
 	}
@@ -561,7 +515,6 @@ func (s *Syncgroup) List() (err error) {
 		fmt.Printf("Store: %s\n", store.Name())
 
 		folders := store.GetFolders()
-		err = applyRegExpPatterns(store, folders)
 		if err != nil {
 			return s.e.E(err)
 		}
