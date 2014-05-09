@@ -50,7 +50,7 @@ IMAP Servers: Dovecot, GMail IMAP.
 | GMail IMAP    | Maildir       | OK                      |
 | Maildir       | Maildir       | OK                      |
 | Dovecot       | Dovecot       | OK                      |
-| GMail IMAP    | Dovecot       | KO (see known problems) |
+| GMail IMAP    | Dovecot       | OK                      |
 
 
 ## FAQs
@@ -69,9 +69,3 @@ Everything can happen...
 
 ### Can I use a store in multiple syncgroups (For example IMAP1 <-> Maildir1 <-> IMAP2)?
 By design it should be possible but more tests to verifiy nasty corner cases are needed.
-
-
-## Known Problems
-
-- dovecot, during a folder list command, doesn't quote folder names that has square brackets. [go-imap](https://github.com/mxk/go-imap) (like other imap clients) doesn't handle this correctly (I'm working to fix this). GMAIL imap instead quotes folder names containing square brackets (so no problems).
-If you are syncing between GMail and dovecot you'll get problems after the [Gmail].* folders are created on dovecot.
